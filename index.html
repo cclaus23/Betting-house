@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Betting House</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
@@ -80,81 +79,45 @@
             font-size: 0.8em;
             color: #888;
         }
-
-        .results-table {
-            margin-top: 20px;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .results-table th, .results-table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .results-table th {
-            background-color: #f2f2f2;
-        }
     </style>
     <script>
-        const bets = {};
+        let bets = {};
 
-        function placeBet(betId) {
-            const bet = bets[betId];
-            const name = prompt("Enter your name:").trim();
-            const amount = parseFloat(prompt(`Enter your bet amount for: ${betId}`));
+        function generateUniqueId() {
+            return `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+        }
 
-            if (!isNaN(amount) && amount > 0) {
-                const betOptionsContainer = document.createElement('div');
-                betOptionsContainer.style.textAlign = 'center';
-                betOptionsContainer.style.marginTop = '20px';
+        function saveBetsToLocalStorage() {
+            localStorage.setItem('bets', JSON.stringify(bets));
+        }
 
-                // Create "Yes" and "No" buttons
-                const yesButton = document.createElement('button');
-                yesButton.textContent = 'Yes';
-                yesButton.style.margin = '5px';
-                yesButton.style.padding = '10px 20px';
-                yesButton.style.backgroundColor = '#4CAF50';
-                yesButton.style.color = 'white';
-                yesButton.style.border = 'none';
-                yesButton.style.cursor = 'pointer';
-
-                const noButton = document.createElement('button');
-                noButton.textContent = 'No';
-                noButton.style.margin = '5px';
-                noButton.style.padding = '10px 20px';
-                noButton.style.backgroundColor = '#f44336';
-                noButton.style.color = 'white';
-                noButton.style.border = 'none';
-                noButton.style.cursor = 'pointer';
-
-                // Event listener for the "Yes" button
-                yesButton.addEventListener('click', () => {
-                    betChoice(name, amount, 'Yes', bet);
-                    document.body.removeChild(betOptionsContainer); // Remove the buttons
-                });
-
-                // Event listener for the "No" button
-                noButton.addEventListener('click', () => {
-                    betChoice(name, amount, 'No', bet);
-                    document.body.removeChild(betOptionsContainer); // Remove the buttons
-                });
-
-                // Append buttons to the container
-                betOptionsContainer.appendChild(yesButton);
-                betOptionsContainer.appendChild(noButton);
-                document.body.appendChild(betOptionsContainer);
-            } else {
-                alert("Invalid bet amount. Please enter a positive number.");
+        function loadBetsFromLocalStorage() {
+            const storedBets = localStorage.getItem('bets');
+            if (storedBets) {
+                bets = JSON.parse(storedBets);
+                renderBets();
             }
         }
 
-        function betChoice(name, amount, choice, bet) {
-            if (!bet.bets[choice]) bet.bets[choice] = [];
-            bet.bets[choice].push({ name, amount });
-            bet.totalPool += amount;
-            alert(`You placed a bet of $${amount} on: ${choice}.`);
+        function renderBets() {
+            const container = document.querySelector('.container');
+            container.querySelectorAll('.bet-card').forEach(card => card.remove());
+
+            for (const betId in bets) {
+                const bet = bets[betId];
+                const betCard = document.createElement('div');
+                betCard.className = 'bet-card';
+                betCard.setAttribute('id', betId);
+                betCard.innerHTML = `
+                    <h3>${bet.title}</h3>
+                    <div class="details">
+                        Created by ${bet.creator}
+                        <br><strong>ID:</strong> ${betId}
+                    </div>
+                    <button onclick="placeBet('${betId}')">Place Bet</button>
+                `;
+                container.insertBefore(betCard, document.querySelector('.add-bet'));
+            }
         }
 
         function createNewBet() {
@@ -162,25 +125,18 @@
             const creator = prompt("Enter your name:").trim();
 
             if (betTitle && creator) {
-                const container = document.querySelector('.container');
-                const betCard = document.createElement('div');
-                betCard.className = 'bet-card';
-                betCard.innerHTML = `
-                    <h3>${betTitle}</h3>
-                    <div class="details">
-                        Created by ${creator}
-                    </div>
-                    <button onclick="placeBet('${betTitle}')">Place Bet</button>
-                    <button onclick="endBet('${betTitle}')">End Bet</button>
-                `;
-                container.insertBefore(betCard, document.querySelector('.add-bet'));
+                const betId = generateUniqueId();
 
-                bets[betTitle] = {
+                bets[betId] = {
+                    title: betTitle,
                     creator,
                     choices: ['Yes', 'No'],
                     bets: {},
                     totalPool: 0
                 };
+
+                saveBetsToLocalStorage();
+                renderBets();
 
                 alert("New bet created successfully!");
             } else {
@@ -188,78 +144,35 @@
             }
         }
 
-        function endBet(betId) {
+        function placeBet(betId) {
             const bet = bets[betId];
+            const name = prompt("Enter your name:").trim();
+            const amount = parseFloat(prompt(`Enter your bet amount for: ${bet.title}`));
 
-            const winningChoice = prompt("Enter the winning choice: Yes or No").trim();
-            if (!bet.choices.includes(winningChoice)) {
-                alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                return;
-            }
+            if (!isNaN(amount) && amount > 0) {
+                const choice = prompt("Enter your choice: Yes or No").trim();
+                if (bet.choices.includes(choice)) {
+                    const betPlacementId = generateUniqueId();
 
-            const winners = bet.bets[winningChoice] || [];
-            const losers = [];
-            let totalWinnersStake = 0;
+                    if (!bet.bets[choice]) bet.bets[choice] = [];
+                    bet.bets[choice].push({ id: betPlacementId, name, amount });
 
-            winners.forEach(winner => {
-                totalWinnersStake += winner.amount;
-            });
+                    bet.totalPool += amount;
 
-            for (let choice in bet.bets) {
-                if (choice !== winningChoice) {
-                    bet.bets[choice].forEach(loser => {
-                        losers.push(loser);
-                    });
+                    saveBetsToLocalStorage();
+
+                    alert(`You placed a bet of $${amount} on "${choice}". Bet ID: ${betPlacementId}`);
+                } else {
+                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
                 }
+            } else {
+                alert("Invalid bet amount. Please enter a positive number.");
             }
-
-            const payoutPerDollar = bet.totalPool / totalWinnersStake;
-
-            // Display the results
-            let resultsHtml = `
-                <h3>Results for: ${betId}</h3>
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Bet Amount</th>
-                            <th>Outcome</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            // Display winners
-            winners.forEach(winner => {
-                const payout = (winner.amount * payoutPerDollar).toFixed(2);
-                resultsHtml += `
-                    <tr>
-                        <td>${winner.name}</td>
-                        <td>$${winner.amount}</td>
-                        <td>Winner - Payout: $${payout}</td>
-                    </tr>
-                `;
-            });
-
-            // Display losers
-            losers.forEach(loser => {
-                resultsHtml += `
-                    <tr>
-                        <td>${loser.name}</td>
-                        <td>$${loser.amount}</td>
-                        <td>Loser</td>
-                    </tr>
-                `;
-            });
-
-            resultsHtml += `
-                    </tbody>
-                </table>
-            `;
-
-            document.querySelector('.container').innerHTML += resultsHtml;
-            alert(`Bet '${betId}' settled with '${winningChoice}' as the winner.`);
         }
+
+        window.onload = () => {
+            loadBetsFromLocalStorage();
+        };
     </script>
 </head>
 <body>
