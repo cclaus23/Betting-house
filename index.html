@@ -4,181 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Betting House</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .container {
-            padding: 20px;
-        }
-
-        .bet-card {
-            background: #fff;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .bet-card h3 {
-            margin: 0;
-        }
-
-        .bet-card .details {
-            margin: 10px 0;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .bet-card button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .bet-card button:hover {
-            background-color: #45a049;
-        }
-
-        .add-bet {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .add-bet button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .add-bet button:hover {
-            background-color: #0056b3;
-        }
-
-        footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.8em;
-            color: #888;
-        }
-    </style>
-    <script>
-        let bets = JSON.parse(localStorage.getItem('bets')) || {};
-
-        function generateUniqueId() {
-            return 'bet-' + Math.random().toString(36).substr(2, 9);
-        }
-
-        function saveBetsToLocalStorage() {
-            localStorage.setItem('bets', JSON.stringify(bets));
-        }
-
-        function createBetCard(bet) {
-            const container = document.querySelector('.container');
-            const betCard = document.createElement('div');
-            betCard.className = 'bet-card';
-            betCard.innerHTML = `
-                <h3>${bet.title}</h3>
-                <div class="details">
-                    Created by ${bet.creator}
-                    <br><strong>ID:</strong> ${bet.id}
-                </div>
-                <button onclick="placeBet('${bet.id}')">Place Bet</button>
-            `;
-            container.insertBefore(betCard, document.querySelector('.add-bet'));
-        }
-
-        function createNewBet() {
-            const betTitle = prompt("Enter the title of the bet:").trim();
-            const creator = prompt("Enter your name:").trim();
-
-            if (betTitle && creator) {
-                const betId = generateUniqueId();
-                const newBet = {
-                    id: betId,
-                    title: betTitle,
-                    creator,
-                    choices: ['Yes', 'No'],
-                    bets: {},
-                    totalPool: 0,
-                };
-
-                bets[betId] = newBet;
-                saveBetsToLocalStorage();
-                createBetCard(newBet);
-                alert("New bet created successfully!");
-            } else {
-                alert("Failed to create a new bet. Please ensure all fields are filled out correctly.");
-            }
-        }
-
-        function placeBet(betId) {
-            const bet = bets[betId];
-            const name = prompt("Enter your name:").trim();
-            const amount = parseFloat(prompt(`Enter your bet amount for: ${bet.title}`));
-
-            if (!isNaN(amount) && amount > 0) {
-                const choice = prompt("Enter your choice: Yes or No").trim();
-                if (bet.choices.includes(choice)) {
-                    if (!bet.bets[choice]) bet.bets[choice] = [];
-                    bet.bets[choice].push({ name, amount });
-                    bet.totalPool += amount;
-                    saveBetsToLocalStorage();
-                    alert(`You placed a bet of $${amount} on: ${choice}.`);
-                } else {
-                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                }
-            } else {
-                alert("Invalid bet amount. Please enter a positive number.");
-            }
-        }
-
-        function loadBets() {
-            for (const betId in bets) {
-                createBetCard(bets[betId]);
-            }
-        }
-
-        function openAdminPanel() {
-            window.location.href = "admin.html";
-        }
-
-        window.onload = loadBets;
-    </script>
+    <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
     <header>
         <h1>Betting House</h1>
-        <button onclick="openAdminPanel()" style="margin: 10px; padding: 10px 20px; cursor: pointer;">Admin Panel</button>
+        <button class="admin-btn" onclick="openAdminPortal()">Admin Panel</button>
     </header>
 
     <div class="container">
         <div class="add-bet">
-            <button onclick="createNewBet()">Create New Bet</button>
+            <button id="create-bet-btn">Create New Bet</button>
         </div>
+        <div id="bets-container"></div>
     </div>
 
     <footer>
         &copy; 2025 Betting House | Fun bets among friends
     </footer>
+    <script src="scripts/app.js"></script>
 </body>
 </html>
