@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Betting House</title>
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -81,28 +82,85 @@
         }
     </style>
     <script>
-        let bets = {};
+        // Check for existing bets in localStorage and parse them
+        const bets = JSON.parse(localStorage.getItem('bets')) || {};
 
+        // Function to generate a unique ID
         function generateUniqueId() {
             return `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
         }
 
-        function saveBetsToLocalStorage() {
-            localStorage.setItem('bets', JSON.stringify(bets));
-        }
+        // Function to create a new bet
+        function createNewBet() {
+            const betTitle = prompt("Enter the title of the bet:").trim();
+            const creator = prompt("Enter your name:").trim();
 
-        function loadBetsFromLocalStorage() {
-            const storedBets = localStorage.getItem('bets');
-            if (storedBets) {
-                bets = JSON.parse(storedBets);
-                renderBets();
+            if (betTitle && creator) {
+                const betId = generateUniqueId();
+                const container = document.querySelector('.container');
+
+                const betCard = document.createElement('div');
+                betCard.className = 'bet-card';
+                betCard.setAttribute('id', betId);
+                betCard.innerHTML = `
+                    <h3>${betTitle}</h3>
+                    <div class="details">
+                        Created by ${creator}
+                        <br><strong>ID:</strong> ${betId}
+                    </div>
+                    <button onclick="placeBet('${betId}')">Place Bet</button>
+                `;
+                container.insertBefore(betCard, document.querySelector('.add-bet'));
+
+                // Save the bet data in localStorage
+                bets[betId] = {
+                    title: betTitle,
+                    creator,
+                    choices: ['Yes', 'No'],
+                    bets: {},
+                    totalPool: 0
+                };
+
+                // Update localStorage with new bet data
+                localStorage.setItem('bets', JSON.stringify(bets));
+
+                alert("New bet created successfully!");
+            } else {
+                alert("Failed to create a new bet. Please ensure all fields are filled out correctly.");
             }
         }
 
-        function renderBets() {
-            const container = document.querySelector('.container');
-            container.querySelectorAll('.bet-card').forEach(card => card.remove());
+        // Function to place a bet
+        function placeBet(betId) {
+            const bet = bets[betId];
+            const name = prompt("Enter your name:").trim();
+            const amount = parseFloat(prompt(`Enter your bet amount for: ${bet.title}`));
 
+            if (!isNaN(amount) && amount > 0) {
+                const choice = prompt("Enter your choice: Yes or No").trim();
+                if (bet.choices.includes(choice)) {
+                    const betPlacementId = generateUniqueId();
+
+                    if (!bet.bets[choice]) bet.bets[choice] = [];
+                    bet.bets[choice].push({ id: betPlacementId, name, amount });
+
+                    bet.totalPool += amount;
+
+                    alert(`You placed a bet of $${amount} on "${choice}". Bet ID: ${betPlacementId}`);
+
+                    // Update localStorage with updated bets
+                    localStorage.setItem('bets', JSON.stringify(bets));
+                } else {
+                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
+                }
+            } else {
+                alert("Invalid bet amount. Please enter a positive number.");
+            }
+        }
+
+        // Function to display existing bets when the page loads
+        function displayExistingBets() {
+            const container = document.querySelector('.container');
             for (const betId in bets) {
                 const bet = bets[betId];
                 const betCard = document.createElement('div');
@@ -120,59 +178,9 @@
             }
         }
 
-        function createNewBet() {
-            const betTitle = prompt("Enter the title of the bet:").trim();
-            const creator = prompt("Enter your name:").trim();
+        // Load existing bets when the page is loaded
+        window.onload = displayExistingBets;
 
-            if (betTitle && creator) {
-                const betId = generateUniqueId();
-
-                bets[betId] = {
-                    title: betTitle,
-                    creator,
-                    choices: ['Yes', 'No'],
-                    bets: {},
-                    totalPool: 0
-                };
-
-                saveBetsToLocalStorage();
-                renderBets();
-
-                alert("New bet created successfully!");
-            } else {
-                alert("Failed to create a new bet. Please ensure all fields are filled out correctly.");
-            }
-        }
-
-        function placeBet(betId) {
-            const bet = bets[betId];
-            const name = prompt("Enter your name:").trim();
-            const amount = parseFloat(prompt(`Enter your bet amount for: ${bet.title}`));
-
-            if (!isNaN(amount) && amount > 0) {
-                const choice = prompt("Enter your choice: Yes or No").trim();
-                if (bet.choices.includes(choice)) {
-                    const betPlacementId = generateUniqueId();
-
-                    if (!bet.bets[choice]) bet.bets[choice] = [];
-                    bet.bets[choice].push({ id: betPlacementId, name, amount });
-
-                    bet.totalPool += amount;
-
-                    saveBetsToLocalStorage();
-
-                    alert(`You placed a bet of $${amount} on "${choice}". Bet ID: ${betPlacementId}`);
-                } else {
-                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                }
-            } else {
-                alert("Invalid bet amount. Please enter a positive number.");
-            }
-        }
-
-        window.onload = () => {
-            loadBetsFromLocalStorage();
-        };
     </script>
 </head>
 <body>
