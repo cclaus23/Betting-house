@@ -80,22 +80,6 @@
             font-size: 0.8em;
             color: #888;
         }
-
-        .results-table {
-            margin-top: 20px;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .results-table th, .results-table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .results-table th {
-            background-color: #f2f2f2;
-        }
     </style>
     <script>
         let bets = JSON.parse(localStorage.getItem('bets')) || {};
@@ -107,33 +91,6 @@
         function saveBetsToLocalStorage() {
             localStorage.setItem('bets', JSON.stringify(bets));
         }
-
-        function placeBet(betId) {
-            const bet = bets[betId];
-            const name = prompt("Enter your name:").trim();
-            const amount = parseFloat(prompt(`Enter your bet amount for: ${betId}`));
-
-            if (!isNaN(amount) && amount > 0) {
-                const buttonsContainer = document.createElement('div');
-                const yesButton = document.createElement('button');
-                const noButton = document.createElement('button');
-                yesButton.textContent = "Yes";
-                noButton.textContent = "No";
-
-                const choice = prompt("Enter your choice: Yes or No").trim();
-                if (bet.choices.includes(choice)) {
-                    if (!bet.bets[choice]) bet.bets[choice] = [];
-                    bet.bets[choice].push({ name, amount });
-                    bet.totalPool += amount;
-                    alert(`You placed a bet of $${amount} on: ${choice}.`);
-                } else {
-                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                }
-            } else {
-                alert("Invalid bet amount. Please enter a positive number.");
-            }
-        }
-          }
 
         function createNewBet() {
             const betTitle = prompt("Enter the title of the bet:").trim();
@@ -151,7 +108,6 @@
                         <br><strong>ID:</strong> ${betId}
                     </div>
                     <button onclick="placeBet('${betId}')">Place Bet</button>
-                    <button onclick="endBet('${betId}')">End Bet</button>
                 `;
                 container.insertBefore(betCard, document.querySelector('.add-bet'));
 
@@ -171,104 +127,113 @@
             }
         }
 
-        function endBet(betId) {
+        function placeBet(betId) {
             const bet = bets[betId];
+            const name = prompt("Enter your name:").trim();
+            const amount = parseFloat(prompt(`Enter your bet amount for: ${bet.title}`));
 
-            if (!bet) {
-                alert("Bet not found.");
-                return;
-            }
-
-            const winningChoice = prompt("Enter the winning choice: Yes or No").trim();
-            if (!bet.choices.includes(winningChoice)) {
-                alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                return;
-            }
-
-            const winners = bet.bets[winningChoice] || [];
-            const losers = [];
-            let totalWinnersStake = 0;
-
-            winners.forEach(winner => {
-                totalWinnersStake += winner.amount;
-            });
-
-            for (let choice in bet.bets) {
-                if (choice !== winningChoice) {
-                    bet.bets[choice].forEach(loser => {
-                        losers.push(loser);
-                    });
+            if (!isNaN(amount) && amount > 0) {
+                const choice = prompt("Enter your choice: Yes or No").trim();
+                if (bet.choices.includes(choice)) {
+                    if (!bet.bets[choice]) bet.bets[choice] = [];
+                    bet.bets[choice].push({ name, amount });
+                    bet.totalPool += amount;
+                    alert(`You placed a bet of $${amount} on: ${choice}.`);
+                    saveBetsToLocalStorage();
+                } else {
+                    alert("Invalid choice. Please choose 'Yes' or 'No'.");
                 }
-            }
-
-            const payoutPerDollar = bet.totalPool / totalWinnersStake;
-
-            let resultsHtml = `
-                <h3>Results for: ${bet.title}</h3>
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Bet Amount</th>
-                            <th>Outcome</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            winners.forEach(winner => {
-                const payout = (winner.amount * payoutPerDollar).toFixed(2);
-                resultsHtml += `
-                    <tr>
-                        <td>${winner.name}</td>
-                        <td>$${winner.amount}</td>
-                        <td>Winner - Payout: $${payout}</td>
-                    </tr>
-                `;
-            });
-
-            losers.forEach(loser => {
-                resultsHtml += `
-                    <tr>
-                        <td>${loser.name}</td>
-                        <td>$${loser.amount}</td>
-                        <td>Loser</td>
-                    </tr>
-                `;
-            });
-
-            resultsHtml += `
-                    </tbody>
-                </table>
-            `;
-
-            document.querySelector('.container').innerHTML += resultsHtml;
-            alert(`Bet '${bet.title}' settled with '${winningChoice}' as the winner.`);
-
-            delete bets[betId];
-            saveBetsToLocalStorage();
-        }
-
-        function loadSavedBets() {
-            for (const betId in bets) {
-                const bet = bets[betId];
-                const container = document.querySelector('.container');
-                const betCard = document.createElement('div');
-                betCard.className = 'bet-card';
-                betCard.innerHTML = `
-                    <h3>${bet.title}</h3>
-                    <div class="details">
-                        Created by ${bet.creator}
-                        <br><strong>ID:</strong> ${bet.id}
-                    </div>
-                    <button onclick="placeBet('${bet.id}')">Place Bet</button>
-                    <button onclick="endBet('${bet.id}')">End Bet</button>
-                `;
-                container.insertBefore(betCard, document.querySelector('.add-bet'));
+            } else {
+                alert("Invalid bet amount. Please enter a positive number.");
             }
         }
 
-        window.onload = loadSavedBets;
+        function openAdminPanel() {
+            const adminWindow = window.open("", "Admin Panel", "width=800,height=600");
+            adminWindow.document.write(`
+                <html>
+                <head>
+                    <title>Admin Panel</title>
+                    <style>
+                        body {
+                            font-family: 'Roboto', sans-serif;
+                            padding: 20px;
+                            background-color: #f9f9f9;
+                        }
+                        .bet-card {
+                            background: #fff;
+                            margin: 10px 0;
+                            padding: 15px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                        }
+                        .bet-card h3 {
+                            margin: 0;
+                        }
+                        .bet-card button {
+                            background-color: #4CAF50;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            margin-right: 10px;
+                        }
+                        .bet-card button:hover {
+                            background-color: #45a049;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Admin Panel</h1>
+                    <div id="admin-container"></div>
+                    <script>
+                        const bets = ${JSON.stringify(bets)};
+                        const adminContainer = document.getElementById('admin-container');
+
+                        function endBet(betId) {
+                            const bet = bets[betId];
+                            const winningChoice = prompt("Enter the winning choice: Yes or No").trim();
+                            if (!bet.choices.includes(winningChoice)) {
+                                alert("Invalid choice. Please choose 'Yes' or 'No'.");
+                                return;
+                            }
+                            const winners = bet.bets[winningChoice] || [];
+                            const totalPool = bet.totalPool;
+                            alert("Bet ended and winners notified.");
+                            delete bets[betId];
+                            localStorage.setItem('bets', JSON.stringify(bets));
+                            location.reload();
+                        }
+
+                        for (const betId in bets) {
+                            const bet = bets[betId];
+                            const betCard = document.createElement('div');
+                            betCard.className = 'bet-card';
+                            betCard.innerHTML = \`
+                                <h3>\${bet.title}</h3>
+                                <div><strong>Creator:</strong> \${bet.creator}</div>
+                                <div><strong>ID:</strong> \${bet.id}</div>
+                                <div><strong>Total Pool:</strong> $ \${bet.totalPool}</div>
+                                <button onclick="endBet('\${betId}')">End Bet</button>
+                            \`;
+                            adminContainer.appendChild(betCard);
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+        }
+
+        window.onload = function () {
+            const addAdminButton = document.createElement('button');
+            addAdminButton.textContent = "Admin Panel";
+            addAdminButton.onclick = openAdminPanel;
+            addAdminButton.style.margin = "20px";
+            addAdminButton.style.padding = "10px 20px";
+            addAdminButton.style.cursor = "pointer";
+            document.querySelector('header').appendChild(addAdminButton);
+        };
     </script>
 </head>
 <body>
@@ -287,4 +252,3 @@
     </footer>
 </body>
 </html>
-
