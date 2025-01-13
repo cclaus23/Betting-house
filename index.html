@@ -92,26 +92,28 @@
             localStorage.setItem('bets', JSON.stringify(bets));
         }
 
+        function createBetCard(bet) {
+            const container = document.querySelector('.container');
+            const betCard = document.createElement('div');
+            betCard.className = 'bet-card';
+            betCard.innerHTML = `
+                <h3>${bet.title}</h3>
+                <div class="details">
+                    Created by ${bet.creator}
+                    <br><strong>ID:</strong> ${bet.id}
+                </div>
+                <button onclick="placeBet('${bet.id}')">Place Bet</button>
+            `;
+            container.insertBefore(betCard, document.querySelector('.add-bet'));
+        }
+
         function createNewBet() {
             const betTitle = prompt("Enter the title of the bet:").trim();
             const creator = prompt("Enter your name:").trim();
 
             if (betTitle && creator) {
                 const betId = generateUniqueId();
-                const container = document.querySelector('.container');
-                const betCard = document.createElement('div');
-                betCard.className = 'bet-card';
-                betCard.innerHTML = `
-                    <h3>${betTitle}</h3>
-                    <div class="details">
-                        Created by ${creator}
-                        <br><strong>ID:</strong> ${betId}
-                    </div>
-                    <button onclick="placeBet('${betId}')">Place Bet</button>
-                `;
-                container.insertBefore(betCard, document.querySelector('.add-bet'));
-
-                bets[betId] = {
+                const newBet = {
                     id: betId,
                     title: betTitle,
                     creator,
@@ -120,7 +122,9 @@
                     totalPool: 0,
                 };
 
+                bets[betId] = newBet;
                 saveBetsToLocalStorage();
+                createBetCard(newBet);
                 alert("New bet created successfully!");
             } else {
                 alert("Failed to create a new bet. Please ensure all fields are filled out correctly.");
@@ -138,8 +142,8 @@
                     if (!bet.bets[choice]) bet.bets[choice] = [];
                     bet.bets[choice].push({ name, amount });
                     bet.totalPool += amount;
-                    alert(`You placed a bet of $${amount} on: ${choice}.`);
                     saveBetsToLocalStorage();
+                    alert(`You placed a bet of $${amount} on: ${choice}.`);
                 } else {
                     alert("Invalid choice. Please choose 'Yes' or 'No'.");
                 }
@@ -148,9 +152,17 @@
             }
         }
 
+        function loadBets() {
+            for (const betId in bets) {
+                createBetCard(bets[betId]);
+            }
+        }
+
         function openAdminPanel() {
             window.location.href = "admin.html";
         }
+
+        window.onload = loadBets;
     </script>
 </head>
 <body>
