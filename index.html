@@ -149,96 +149,14 @@
         }
 
         function openAdminPanel() {
-            const adminWindow = window.open("", "Admin Panel", "width=800,height=600");
-            adminWindow.document.write(`
-                <html>
-                <head>
-                    <title>Admin Panel</title>
-                    <style>
-                        body {
-                            font-family: 'Roboto', sans-serif;
-                            padding: 20px;
-                            background-color: #f9f9f9;
-                        }
-                        .bet-card {
-                            background: #fff;
-                            margin: 10px 0;
-                            padding: 15px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                        }
-                        .bet-card h3 {
-                            margin: 0;
-                        }
-                        .bet-card button {
-                            background-color: #4CAF50;
-                            color: white;
-                            border: none;
-                            padding: 10px 20px;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            margin-right: 10px;
-                        }
-                        .bet-card button:hover {
-                            background-color: #45a049;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Admin Panel</h1>
-                    <div id="admin-container"></div>
-                    <script>
-                        const bets = ${JSON.stringify(bets)};
-                        const adminContainer = document.getElementById('admin-container');
-
-                        function endBet(betId) {
-                            const bet = bets[betId];
-                            const winningChoice = prompt("Enter the winning choice: Yes or No").trim();
-                            if (!bet.choices.includes(winningChoice)) {
-                                alert("Invalid choice. Please choose 'Yes' or 'No'.");
-                                return;
-                            }
-                            const winners = bet.bets[winningChoice] || [];
-                            const totalPool = bet.totalPool;
-                            alert("Bet ended and winners notified.");
-                            delete bets[betId];
-                            localStorage.setItem('bets', JSON.stringify(bets));
-                            location.reload();
-                        }
-
-                        for (const betId in bets) {
-                            const bet = bets[betId];
-                            const betCard = document.createElement('div');
-                            betCard.className = 'bet-card';
-                            betCard.innerHTML = \`
-                                <h3>\${bet.title}</h3>
-                                <div><strong>Creator:</strong> \${bet.creator}</div>
-                                <div><strong>ID:</strong> \${bet.id}</div>
-                                <div><strong>Total Pool:</strong> $ \${bet.totalPool}</div>
-                                <button onclick="endBet('\${betId}')">End Bet</button>
-                            \`;
-                            adminContainer.appendChild(betCard);
-                        }
-                    </script>
-                </body>
-                </html>
-            `);
+            window.location.href = "admin.html";
         }
-
-        window.onload = function () {
-            const addAdminButton = document.createElement('button');
-            addAdminButton.textContent = "Admin Panel";
-            addAdminButton.onclick = openAdminPanel;
-            addAdminButton.style.margin = "20px";
-            addAdminButton.style.padding = "10px 20px";
-            addAdminButton.style.cursor = "pointer";
-            document.querySelector('header').appendChild(addAdminButton);
-        };
     </script>
 </head>
 <body>
     <header>
         <h1>Betting House</h1>
+        <button onclick="openAdminPanel()" style="margin: 10px; padding: 10px 20px; cursor: pointer;">Admin Panel</button>
     </header>
 
     <div class="container">
